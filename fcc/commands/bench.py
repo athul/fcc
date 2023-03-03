@@ -4,7 +4,7 @@ import requests
 from rich.console import Console
 from rich.table import Table
 
-from fcc.utils.utils import get_team_with_menu,TOKEN_AUTH_HEADER 
+from fcc.utils.utils import get_bench_menu, get_team_with_menu,TOKEN_AUTH_HEADER 
 
 @click.group()
 def bench():
@@ -15,7 +15,7 @@ def bench():
 def get_benches(team):
     if not team:
         team = get_team_with_menu()
-    benches_req = requests.post("https://frappecloud.com/api/method/press.api.bench.all",headers={**TOKEN_AUTH_HEADER,"X-Press-Team":team})
+    benches_req = requests.post("http://135.181.42.205:8000/api/method/press.api.bench.all",headers={**TOKEN_AUTH_HEADER,"X-Press-Team":team})
     if benches_req.ok:
         try:
             all_benches = benches_req.json()
@@ -26,4 +26,12 @@ def get_benches(team):
         except Exception as e:
             print(e)
 
+@click.command("deploy")
+@click.option("--team",help="Bench you want to deploy")
+def deploy_bench(team):
+    if not team:
+        team = get_team_with_menu()
+    get_bench_menu(team)
+
 bench.add_command(get_benches)
+bench.add_command(deploy_bench)

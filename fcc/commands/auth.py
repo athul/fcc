@@ -10,7 +10,7 @@ def login(username,password):
     print(username, password)
     creds = {"usr":username,"pwd":password}
     session = requests.Session()
-    login = session.post("https://frappecloud.com/api/method/login",creds)
+    login = session.post("http://135.181.42.205:8000/api/method/login",creds)
     if login.ok:
         click.secho("Authorization Successfull",fg="green")
         generate_tokens(session=session)
@@ -19,7 +19,7 @@ def login(username,password):
 @click.command()
 def getme():
     try:
-        me = requests.get("https://frappecloud.com/api/method/press.api.account.me",headers=TOKEN_AUTH_HEADER)
+        me = requests.get("http://135.181.42.205:8000/api/method/press.api.account.me",headers=TOKEN_AUTH_HEADER)
         if me.ok:
             click.secho(me.json(),fg="green")
     except:

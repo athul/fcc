@@ -19,7 +19,7 @@ def get_sites(team,recents,all):
     if not team:
         team = get_team_with_menu()
     header = {**TOKEN_AUTH_HEADER,"X-Press-Team":team}
-    sites_req = requests.post("https://frappecloud.com/api/method/press.api.site.all",headers=header)
+    sites_req = requests.post("http://135.181.42.205:8000/api/method/press.api.site.all",headers=header)
     if sites_req.ok:
         all_sites =  sites_req.json()
         if recents:
@@ -32,7 +32,5 @@ def get_sites(team,recents,all):
             for site in all_sites["message"]["site_list"]:
                 sites_table.add_row(site["name"],site["status"],site["version"])
             Console().print(sites_table)
-
-# @click.command("new") #TODO: New site
 
 sites.add_command(get_sites)
