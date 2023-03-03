@@ -1,17 +1,18 @@
+import sys
 import click
 import requests
 
 from rich.console import Console
 from rich.table import Table
 
-from fcc.utils.utils import get_bench_menu, get_team_with_menu,TOKEN_AUTH_HEADER 
+from fcc.utils.utils import apps_to_update_menu, check_bench_for_updates, deploy_new_bench, get_bench_menu, get_bench_updated_apps, get_team_with_menu,TOKEN_AUTH_HEADER, validate_bench, validate_team 
 
-@click.group()
+@click.group(help="Access Benches and execute actions on Benches")
 def bench():
     pass
 
-@click.command("list")
-@click.option("--team",help="Frappe Cloud Team for sites")
+@click.command("list",help="List all Private benches under a team")
+@click.option("--team",help="Your Frappe Cloud team")
 def get_benches(team):
     if not team:
         team = get_team_with_menu()
@@ -26,12 +27,28 @@ def get_benches(team):
         except Exception as e:
             print(e)
 
-@click.command("deploy")
-@click.option("--team",help="Bench you want to deploy")
-def deploy_bench(team):
+@click.command("deploy",help="Deploy a new version of the Bench")
+@click.option("--team",help="Team owning the Private Bench")
+@click.option("--bench",help="The Name of the bench. eg: bench-4219")
+def deploy_bench(team,bench):
+    if team:
+        validate_team(team)
     if not team:
         team = get_team_with_menu()
-    get_bench_menu(team)
+    if not bench:
+        bench = get_bench_menu(team)
+        title = validate_bench(team,bench)
+    else:
+        import re
+        b_name = re.compile("bench-[0-9]{4}")
+        if not b_name.match(bench):
+            sys.exit(1)
+        title = validate_bench(team,bench)
+    update,app = check_bench_for_updates(team,bench)
+    if update:
+        apps_list = get_bench_updated_apps(app)
+        ignore_list = apps_to_update_menu(apps_list,title)
+        deploy_new_bench(team,bench,ignore_list)
 
 bench.add_command(get_benches)
 bench.add_command(deploy_bench)
