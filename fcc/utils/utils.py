@@ -2,6 +2,8 @@ from typing import Tuple
 import click
 import requests
 import sys
+import humanize
+from datetime import datetime as dt
 
 from simple_term_menu import TerminalMenu
 
@@ -160,4 +162,5 @@ def validate_bench(team,bench_name):
     else:
         return title
 
-
+def humanify(time):
+    return humanize.naturaldelta(dt.now() - dt.strptime(time,"%Y-%m-%d %H:%M:%S.%f"))

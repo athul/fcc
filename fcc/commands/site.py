@@ -5,7 +5,7 @@ from rich.console import Console
 from rich.table import Table
 
 
-from fcc.utils.utils import get_team_with_menu,TOKEN_AUTH_HEADER
+from fcc.utils.utils import get_team_with_menu,humanify,TOKEN_AUTH_HEADER
 
 @click.group(help="Access Sites and Execute actions on Sites")
 def sites():
@@ -29,11 +29,12 @@ def get_sites(team,recents,all):
                     recents_table.add_row(site)
                 Console().print(recents_table)
             if all: 
-                sites_table = Table("Site Name","Status","Version",title=f"All Sites of {team}")
+                sites_table = Table("Site Name","Status","Version","Created",title=f"All Sites of {team}")
                 for site in all_sites["message"]["site_list"]:
-                    sites_table.add_row(site["name"],site["status"],site["version"])
+                    sites_table.add_row(site["name"],site["status"],site["version"],humanify(site["creation"]))
                 Console().print(sites_table)
     except Exception as e:
+        print(e)
         click.secho("Not Able to get sites list. please check your connection",fg="yellow")
 
 sites.add_command(get_sites)
