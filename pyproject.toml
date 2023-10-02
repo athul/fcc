@@ -34,11 +34,11 @@ dynamic = [
     "version",
 ]
 
-# [project.scripts]
-# fcc = "fcc.cli:cli"
-
 [project.scripts]
-straw = "fcc.cli:cli"
+fcc = "fcc.cli:cli"
+
+#[project.scripts]
+#straw = "fcc.cli:cli"
 # [project.urls]
 # Changelog = "https://github.com/frappe/bench/releases"
 # Documentation = "https://frappeframework.com/docs/user/en/bench"
