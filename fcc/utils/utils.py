@@ -2,6 +2,7 @@ from typing import Tuple
 import click
 import requests
 import sys
+import os
 import humanize
 from datetime import datetime as dt
 
@@ -12,13 +13,14 @@ def generate_tokens(session: requests.Session):
     # TODO: Do file check and ask for prompts
     try:
         token_req = session.post(
-            "http://fc:8000/api/method/press.api.account.create_api_secret"
+            "https://frappecloud.com/api/method/press.api.account.create_api_secret"
         )
         if token_req.ok:
             tokens = token_req.json()
             api_key = tokens["message"]["api_key"]
             api_secret = tokens["message"]["api_secret"]
-            with open("~/.config/fcc/.fcc", "w") as f:
+            home_dir = os.path.expanduser("~")
+            with open(home_dir + "/.config/fcc/.fcc", "w") as f:
                 f.write(f"{api_key}:{api_secret}")
             click.secho("Token Generated! and saved in .fcc file")
 
@@ -29,8 +31,9 @@ def generate_tokens(session: requests.Session):
 
 def _token() -> str:
     try:
-        with open(".fcc") as f:
-            return f.readline()
+        with open(os.path.expanduser("~") + "/.config/fcc/.fcc") as f:
+            token = f.readline()
+            return token
     except:
         click.secho(
             "Token file not found, please execute fcc login to create the required credentials",
@@ -45,12 +48,16 @@ TOKEN_AUTH_HEADER = {"Authorization": f"Token {_token()}"}
 def get_team():
     try:
         teams_req = requests.post(
-            "http://fc:8000/api/method/press.api.account.get",
-            headers={"Authorization": f"Token {_token()}"},
+            "https://frappecloud.com/api/method/press.api.account.get",
+            headers=TOKEN_AUTH_HEADER,
         )
+        teams_req.raise_for_status()
         if teams_req.ok:
+            teams = []
             account_details = teams_req.json()["message"]
-            teams = account_details["teams"]
+            team_members = account_details["teams"]
+            for member in team_members:
+                teams.append(member["name"])
             return teams
         else:
             click.secho("Failed to get available teams", fg="red")
@@ -72,7 +79,7 @@ def validate_team(team):
 def get_benches(team):
     try:
         benches_req = requests.post(
-            "http://fc:8000/api/method/press.api.bench.all",
+            "https://frappecloud.com/api/method/press.api.bench.all",
             headers={**TOKEN_AUTH_HEADER, "X-Press-Team": team},
         )
         if benches_req.ok:
@@ -86,21 +93,36 @@ def get_benches(team):
 def get_sites(team):
     try:
         sites_req = requests.post(
-            "http://fc:8000/api/method/press.api.site.all",
+            "https://frappecloud.com/api/method/press.api.site.all",
             headers={**TOKEN_AUTH_HEADER, "X-Press-Team": team},
         )
         if sites_req.ok:
             sites = sites_req.json()["message"]
             return sites
     except Exception as e:
-        click.secho(f"\nFailed to get Sites\n\n{e}", fg=yellow)
+        click.secho(f"\nFailed to get Sites\n\n{e}", fg="yellow")
+
+
+def get_site(site, team) -> dict:
+    data = {"name": site}
+    try:
+        site_req = requests.post(
+            "https://frappecloud.com/api/method/press.api.site.get",
+            headers={**TOKEN_AUTH_HEADER, "X-Press-Team": team},
+            json=data,
+        )
+        if site_req.ok:
+            _site = site_req.json()["message"]
+            return _site
+    except Exception as e:
+        click.secho(f"\nFailed to get Site Details\n\n{e}", fg="yellow")
 
 
 def check_bench_for_updates(team, bench):
     data = {"name": bench}
     try:
         update_req = requests.post(
-            "http://fc:8000/api/method/press.api.bench.deploy_information",
+            "https://frappecloud.com/api/method/press.api.bench.deploy_information",
             headers={**TOKEN_AUTH_HEADER, "X-Press-Team": team},
             json=data,
         )
@@ -151,14 +173,14 @@ def deploy_new_bench(team, bench, ignore_list):
     data = {"name": bench, "apps_to_ignore": ignore_list}
     try:
         deploy_req = requests.post(
-            "http://fc:8000/api/method/press.api.bench.deploy",
+            "https://frappecloud.com/api/method/press.api.bench.deploy",
             headers={**TOKEN_AUTH_HEADER, "X-Press-Team": team},
             json=data,
         )
         if deploy_req.ok:
             candidate = deploy_req.json()["message"]
             click.secho(
-                f"\nBench is being deployed, check progress at http://fc:8000/dashboard/benches/{bench}/deploys/{candidate}",
+                f"\nBench is being deployed, check progress at https://frappecloud.com/dashboard/benches/{bench}/deploys/{candidate}",
                 fg="green",
             )
             return candidate
@@ -167,6 +189,7 @@ def deploy_new_bench(team, bench, ignore_list):
                 f"\nAnother version of this bench is already being deployed",
                 fg="yellow",
             )
+            sys.exit(1)
     except Exception as e:
         click.secho(f"Error for Update\n\n{e}", fg="red")
         sys.exit(1)
@@ -207,12 +230,12 @@ def get_bench_menu(team):
 def get_site_menu(team):
     sites = get_sites(team)
     all_sites = []
-    for site in sites["site_list"]:
+    for site in sites:
         all_sites.append(f"{site['name']} - {site['status']}")
     try:
         menu = TerminalMenu(all_sites, title="Select Site", show_search_hint=True)
         idx = menu.show()
-        return sites["site_list"][idx]
+        return sites[idx]
     except:
         sys.exit(1)
 
@@ -222,6 +245,7 @@ def validate_bench(team, bench_name):
     title = ""
     for b in benches:
         if b["name"] == bench_name:
+            print(b["name"])
             title = b["title"]
     if len(title) == 0:
         click.secho("Bench Not found in the provided Team")
@@ -232,3 +256,41 @@ def validate_bench(team, bench_name):
 
 def humanify(time):
     return humanize.naturaldelta(dt.now() - dt.strptime(time, "%Y-%m-%d %H:%M:%S.%f"))
+
+
+def get_bench_from_group(site, group, team):
+    data = {"name": group}
+    try:
+        bench_versions = requests.post(
+            "https://frappecloud.com/api/method/press.api.bench.versions",
+            headers={**TOKEN_AUTH_HEADER, "X-Press-Team": team},
+            json=data,
+        )
+        if bench_versions.ok:
+            bench_versions = bench_versions.json()["message"]
+            for bench in bench_versions:
+                for _site in bench["sites"]:
+                    if _site["name"] == site:
+                        return bench["name"]
+    except Exception as e:
+        click.secho(f"Error fetching Bench\n\n{e}", fg="red")
+        sys.exit(1)
+
+
+def get_ssh_enabled_for_bench(group, bench, team) -> dict | None:
+    data = {"name": group}
+    try:
+        ssh_enabled = requests.post(
+            "https://frappecloud.com/api/method/press.api.bench.versions",
+            headers={**TOKEN_AUTH_HEADER, "X-Press-Team": team},
+            json=data,
+        )
+        if ssh_enabled.ok:
+            benches = ssh_enabled.json()["message"]
+            for _bench in benches:
+                if _bench["name"] == bench:
+                    if _bench["is_ssh_proxy_setup"]:
+                        return {"enabled": True, "proxy": _bench["proxy_server"]}
+    except Exception as e:
+        click.secho(f"Error fetching Bench\n\n{e}", fg="red")
+        sys.exit(1)

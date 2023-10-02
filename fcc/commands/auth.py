@@ -11,7 +11,7 @@ from fcc.utils.utils import generate_tokens, TOKEN_AUTH_HEADER
 def login(username, password):
     creds = {"usr": username, "pwd": password}
     session = requests.Session()
-    login = session.post("http://fc:8000/api/method/login", creds)
+    login = session.post("https://frappecloud.com/api/method/login", creds)
     if login.ok:
         click.secho("Authorization Successfull", fg="green")
         generate_tokens(session=session)
@@ -23,7 +23,7 @@ def login(username, password):
 def getme():
     try:
         me = requests.get(
-            "http://fc:8000/api/method/press.api.account.me",
+            "https://frappecloud.com/api/method/press.api.account.me",
             headers=TOKEN_AUTH_HEADER,
         )
         if me.ok:

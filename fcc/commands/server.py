@@ -18,7 +18,7 @@ def servers():
 def get_servers(team,recents,all):
     if not team:
         team = get_team_with_menu()
-    servers_req = requests.post("http://fc:8000/api/method/press.api.server.all",headers={**TOKEN_AUTH_HEADER,"X-Press-Team":team})
+    servers_req = requests.post("https://frappecloud.com/api/method/press.api.server.all",headers={**TOKEN_AUTH_HEADER,"X-Press-Team":team})
     if servers_req.ok:
         try:
             all_servers = servers_req.json()

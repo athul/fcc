@@ -15,7 +15,6 @@ classifiers = [
     "Operating System :: MacOS",
     "Operating System :: OS Independent",
     "Topic :: Software Development :: Build Tools",
-    "Topic :: Software Development :: Command Line Interfaces",
 ]
 dependencies = [
 "certifi==2022.12.7",
