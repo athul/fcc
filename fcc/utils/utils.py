@@ -294,3 +294,20 @@ def get_ssh_enabled_for_bench(group, bench, team) -> dict | None:
     except Exception as e:
         click.secho(f"Error fetching Bench\n\n{e}", fg="red")
         sys.exit(1)
+
+
+def deploy_benches_with_sites(team, group):
+    data = {"name": group}
+    try:
+        deploy_details_req = requests.post(
+            "https://frappecloud.com/api/method/press.api.bench.deploy_information",
+            headers={**TOKEN_AUTH_HEADER, "X-Press-Team": team},
+            json=data,
+        )
+        if deploy_details_req.ok:
+            print(deploy_details_req.json())
+            deploy_details = deploy_details_req.json()["message"]
+            for site in deploy_details["sites"]:
+                print(site["name"])
+    except Exception as e:
+        print(e)

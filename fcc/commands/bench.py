@@ -24,6 +24,7 @@ from fcc.utils.utils import (
     get_site,
     get_bench_from_group,
     get_ssh_enabled_for_bench,
+    deploy_benches_with_sites,
 )
 
 
@@ -146,7 +147,22 @@ def ssh_login(team, site):
         click.secho(f"SSH is not enabled for {title}", fg="red")
 
 
+@click.command("dup", help="Update a Bench")
+@click.option("--team", help="Team owning the Private Bench")
+@click.option("--bench", help="The Name of the bench. eg: bench-4219")
+def update_bench(team, bench):
+    if team:
+        validate_team(team)
+    if not team:
+        team = get_team_with_menu()
+    if not bench:
+        bench = get_bench_menu(team)
+        title = validate_bench(team, bench)
+    deploy_benches_with_sites(team, bench)
+
+
 bench.add_command(get_benches)
 bench.add_command(deploy_bench)
 bench.add_command(get_logs)
 bench.add_command(ssh_login)
+bench.add_command(update_bench)

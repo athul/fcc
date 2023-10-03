@@ -49,5 +49,4 @@ def get_certificate(group, team) -> dict:
 def login_to_bench(bench, team, proxy):
     import subprocess
 
-    # ssh bench-4219-000004-f4-mumbai@n1-mumbai.frappe.cloud -p 2222
     subprocess.run(["ssh", f"{bench}@{proxy}", "-p 2222"], stderr=subprocess.STDOUT)
