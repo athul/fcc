@@ -131,10 +131,12 @@ def check_bench_for_updates(team, bench):
             if bench_info["update_available"]:
                 return True, bench_info
             else:
-                click.secho(f"\nNo Apps to Update on Bench {bench}", fg="yellow")
+                click.secho(
+                    f"\nNo Apps to Update on Bench {bench}", fg="yellow")
                 return False, bench_info
     except Exception as e:
-        click.secho(f"\nRequest Failed to  get updates on Benches\n\n{e}", fg="yellow")
+        click.secho(
+            f"\nRequest Failed to  get updates on Benches\n\n{e}", fg="yellow")
         sys.exit(1)
 
 
@@ -146,16 +148,18 @@ def get_bench_updated_apps(bench_info):
     return apps
 
 
-def apps_to_update_menu(apps, bench):
+def apps_to_update_menu(apps):
+    # print("Apps:\n\n\n",apps)
+    # breakpoint()
     apps_list = [
-        f"{x['title']} : {x['current_hash'][:7]} -> {x['next_hash'][:7]}" for x in apps
+        f"{x['title']} : {x['current_hash'][:7] if x['current_hash'] else 'New Deploy'} {'-> '+ x['next_hash'][:7] if x['current_hash'] else ''}" for x in apps
     ]
     try:
         apps_menu = TerminalMenu(
             apps_list,
             multi_select=True,
             show_multi_select_hint=True,
-            title=f"Select the Apps you want to add in the new update of {bench}",
+            title=f"Select the Apps you want to add in the new update",
         )
         idx: Tuple[int] = apps_menu.show()
         ignore_list = []
@@ -219,7 +223,8 @@ def get_bench_menu(team):
     for bench in benches:
         all_bench_list.append(f"{bench['title']} : {bench['name']}")
     try:
-        menu = TerminalMenu(all_bench_list, title="Select Bench", show_search_hint=True)
+        menu = TerminalMenu(
+            all_bench_list, title="Select Bench", show_search_hint=True)
         idx = menu.show()
         bench = all_bench_list[idx].split(":")[1].lstrip()
         return bench
@@ -233,7 +238,8 @@ def get_site_menu(team):
     for site in sites:
         all_sites.append(f"{site['name']} - {site['status']}")
     try:
-        menu = TerminalMenu(all_sites, title="Select Site", show_search_hint=True)
+        menu = TerminalMenu(all_sites, title="Select Site",
+                            show_search_hint=True)
         idx = menu.show()
         return sites[idx]
     except:
@@ -245,7 +251,6 @@ def validate_bench(team, bench_name):
     title = ""
     for b in benches:
         if b["name"] == bench_name:
-            print(b["name"])
             title = b["title"]
     if len(title) == 0:
         click.secho("Bench Not found in the provided Team")
@@ -296,7 +301,7 @@ def get_ssh_enabled_for_bench(group, bench, team) -> dict | None:
         sys.exit(1)
 
 
-def deploy_benches_with_sites(team, group):
+def get_benches_with_sites_for_deploy(team, group):
     data = {"name": group}
     try:
         deploy_details_req = requests.post(
@@ -305,9 +310,47 @@ def deploy_benches_with_sites(team, group):
             json=data,
         )
         if deploy_details_req.ok:
-            print(deploy_details_req.json())
             deploy_details = deploy_details_req.json()["message"]
-            for site in deploy_details["sites"]:
-                print(site["name"])
+            apps_list = get_bench_updated_apps(deploy_details)
+            site_list = [site for site in deploy_details["sites"]]
+
+            site_menu = TerminalMenu(
+                [site["name"] for site in site_list],
+                multi_select=True,
+                show_multi_select_hint=True,
+                title="Select Site which you want to deploy",
+                show_search_hint=True,
+            )
+            ignore_list = apps_to_update_menu(apps_list)
+            idx = site_menu.show()
+            sites_list = [site_list[x] for x in idx]
+            return {"sites": sites_list, "ignored": ignore_list}
     except Exception as e:
-        print(e)
+        click.secho(
+            f"Error fetching Bench Deploy Information\n\n{e}", fg="red")
+
+
+def deploy_benches_and_sites(team, sites, ignored_apps, group):
+    data = {"name": group, "sites": sites, "apps_to_ignore": ignored_apps}
+    try:
+        deploy_req = requests.post(
+            "https://frappecloud.com/api/method/press.api.bench.deploy_and_update",
+            headers={**TOKEN_AUTH_HEADER, "X-Press-Team": team},
+            json=data,
+        )
+        if deploy_req.ok:
+            candidate = deploy_req.json()["message"]
+            click.secho(
+                f"\nBench is being deployed, check progress at https://frappecloud.com/dashboard/benches/{group}/deploys/{candidate}",
+                fg="green",
+            )
+            return candidate
+        elif deploy_req.status_code == 417:
+            click.secho(
+                f"\nAnother version of this bench is already being deployed",
+                fg="yellow",
+            )
+            sys.exit(1)
+    except Exception as e:
+        click.secho(f"Error for Update\n\n{e}", fg="red")
+        sys.exit(1)

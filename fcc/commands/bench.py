@@ -24,7 +24,8 @@ from fcc.utils.utils import (
     get_site,
     get_bench_from_group,
     get_ssh_enabled_for_bench,
-    deploy_benches_with_sites,
+    get_benches_with_sites_for_deploy,
+    deploy_benches_and_sites
 )
 
 
@@ -92,7 +93,7 @@ def deploy_bench(team, bench):
     if update:
         try:
             apps_list = get_bench_updated_apps(app)
-            ignore_list = apps_to_update_menu(apps_list, title)
+            ignore_list = apps_to_update_menu(apps_list)
             candidate = deploy_new_bench(team, bench, ignore_list)
             time.sleep(2)
             # connect_to_realtime_callback(candidate)
@@ -147,7 +148,7 @@ def ssh_login(team, site):
         click.secho(f"SSH is not enabled for {title}", fg="red")
 
 
-@click.command("dup", help="Update a Bench")
+@click.command("update", help="Update a Bench")
 @click.option("--team", help="Team owning the Private Bench")
 @click.option("--bench", help="The Name of the bench. eg: bench-4219")
 def update_bench(team, bench):
@@ -157,8 +158,9 @@ def update_bench(team, bench):
         team = get_team_with_menu()
     if not bench:
         bench = get_bench_menu(team)
-        title = validate_bench(team, bench)
-    deploy_benches_with_sites(team, bench)
+        validate_bench(team, bench)
+    bnchsaps = get_benches_with_sites_for_deploy(team, bench) # weird variable naming I know
+    deploy_benches_and_sites(team,bnchsaps["sites"],bnchsaps["ignored"],bench)
 
 
 bench.add_command(get_benches)
