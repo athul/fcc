@@ -1,18 +1,15 @@
-import click
-import requests
-
-from rich.console import Console
-from rich.table import Table
-
-C = Console()
-
 from fcc.utils.utils import (
     get_sites,
     get_site_menu,
     get_team_with_menu,
     humanify,
-    TOKEN_AUTH_HEADER,
 )
+import click
+
+from rich.console import Console
+from rich.table import Table
+
+C = Console()
 
 
 @click.group(help="Access Sites and Execute actions on Sites")
@@ -61,7 +58,8 @@ def overview(team, site):
 
     l = Layout(size=5)
     C = Console(height=10)
-    l.split_column(Layout(name="Plan", size=5), Layout(name="Activities", size=5))
+    l.split_column(Layout(name="Plan", size=5),
+                   Layout(name="Activities", size=5))
 
     l["Plan"].update(Panel(Syntax(str(site), "json")))
     l["Activities"].update("Activities")
@@ -70,4 +68,3 @@ def overview(team, site):
 
 
 sites.add_command(list_sites)
-sites.add_command(overview)

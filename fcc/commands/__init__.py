@@ -6,11 +6,11 @@ from fcc.commands.auth import login,getme
 
 @click.group()
 def fcc():
-    """Straw is how you drink from Frappe Cloud"""
+    """Frappe Cloud CLI"""
 
+fcc.add_command(login)
 fcc.add_command(sites)
 fcc.add_command(bench)
-fcc.add_command(login)
 fcc.add_command(servers)
 fcc.add_command(getme)
 

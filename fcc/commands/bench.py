@@ -94,10 +94,10 @@ def deploy_bench(team, bench):
         try:
             apps_list = get_bench_updated_apps(app)
             ignore_list = apps_to_update_menu(apps_list)
-            candidate = deploy_new_bench(team, bench, ignore_list)
-            time.sleep(2)
+            deploy_new_bench(team, bench, ignore_list)
+            #time.sleep(2)
             # connect_to_realtime_callback(candidate)
-            get_logs_of_deploy(candidate)
+            #get_logs_of_deploy(candidate)
 
         except Exception as e:
             click.secho(f"Failed to get Apps to Update", fg="red")
@@ -165,6 +165,5 @@ def update_bench(team, bench):
 
 bench.add_command(get_benches)
 bench.add_command(deploy_bench)
-bench.add_command(get_logs)
 bench.add_command(ssh_login)
 bench.add_command(update_bench)
